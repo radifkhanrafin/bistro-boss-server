@@ -42,11 +42,46 @@ async function run() {
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-
+        // User related info 
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray()
+            res.send(result)
+        })
         app.post('/users', async (req, res) => {
 
             const users = req.body;
+            const query = { email: users.email }
+            const existingUser = await userCollection.findOne(query);
+            console.log("existing", existingUser)
+            if (existingUser) {
+                return res.send({ mssage: 'user Is already exists' })
+            }
             const result = await userCollection.insertOne(users);
+            res.send(result)
+        })
+
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            
+            const updateDoc = { $set: { role: "admin" } };
+            const result = await userCollection.updateOne(filter, updateDoc)
+            console.log('result' , result)
+            res.send(result)
+        })
+        app.delete('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
+        })
+        app.get('/users/admin/:id', async (req, res) => {
+            const id = req.params.id
+            console.log(id)
+            const filter = { _id: new ObjectId(id) };
+            const result = await userCollection.find(filter).toArray();
             res.send(result)
         })
 
@@ -61,7 +96,7 @@ async function run() {
 
         app.get('/carts', async (req, res) => {
             const email = req.query.email;
-            console.log(email)
+            // console.log(email)
             if (!email) {
                 res.send([])
             }
